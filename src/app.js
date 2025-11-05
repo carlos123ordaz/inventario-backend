@@ -15,6 +15,8 @@ app.get('/', (req, res) => {
 app.use('/api/usuarios', require('./routes/Usuario'));
 app.use('/api/equipos', require('./routes/Equipo'));
 app.use('/api/historial', require('./routes/Historial'));
+app.use('/api/historial', require('./routes/Historial'));
+app.use('/api/auto-asignacion', require('./routes/autoAsignacion'));
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port: ${PORT}`);

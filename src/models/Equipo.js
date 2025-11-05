@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const equipoSchema = new mongoose.Schema({
   equipo: {
     type: String,
-    enum: ['Laptop', 'Desktop'],
+    enum: ['LAPTOP', 'DESKTOP'],
     required: [true, 'El tipo de equipo es requerido'],
     index: true
   },

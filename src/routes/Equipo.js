@@ -5,7 +5,7 @@ const equipoController = require('../controllers/Equipo');
 
 
 const validacionEquipo = [
-  body('equipo').isIn(['Laptop', 'Desktop']).withMessage('Tipo de equipo inválido'),
+  body('equipo').isIn(['LAPTOP', 'DESKTOP']).withMessage('Tipo de equipo inválido'),
   body('marca').notEmpty().withMessage('La marca es requerida'),
   body('modelo').notEmpty().withMessage('El modelo es requerido'),
   body('serie').notEmpty().withMessage('El número de serie es requerido'),
