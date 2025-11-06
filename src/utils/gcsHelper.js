@@ -6,7 +6,7 @@ class GCSHelper {
     try {
       const bucket = bucketsConfig.templates;
       const timestamp = Date.now();
-      const filename = `${timestamp}-${file.originalname}`;
+      const filename = `docs/${timestamp}-${file.originalname}`;
       const blob = bucket.file(filename);
       
       const blobStream = blob.createWriteStream({
