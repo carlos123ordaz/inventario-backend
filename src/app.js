@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 require('./models');
 
 const corsOptions = {
-    origin: ['http://localhost:5173','https://inventario-frontend-seven.vercel.app','https://inventario-frontend-g2w7m7u0h-carlos-projects-154b7a97.vercel.app','https://inventario-frontend-git-main-carlos-projects-154b7a97.vercel.app'],
+    origin: ['http://localhost:5173','https://inventario-corsusa.netlify.app'],
     credentials: true, 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
