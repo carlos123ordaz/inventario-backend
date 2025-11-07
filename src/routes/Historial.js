@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const historialController = require('../controllers/Historial');
+const { verificarToken } = require('../middlewares/authMiddleware');
 
 const validacionAsignacion = [
   body('equipoId').notEmpty().withMessage('El ID del equipo es requerido'),
@@ -14,6 +15,7 @@ const validacionTransferencia = [
   body('nuevoUsuarioId').notEmpty().withMessage('El ID del nuevo usuario es requerido')
 ];
 
+router.use(verificarToken)
 router.get('/', historialController.obtenerHistorial);
 router.get('/activos', historialController.obtenerAsignacionesActivas);
 router.get('/estadisticas', historialController.obtenerEstadisticasHistorial);

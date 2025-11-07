@@ -4,6 +4,7 @@ const router = express.Router();
 const multer = require('multer');
 const { body } = require('express-validator');
 const actaController = require('../controllers/Acta');
+const { verificarToken } = require('../middlewares/authMiddleware');
 
 // Configuración de multer para subir archivos
 const upload = multer({
@@ -34,7 +35,7 @@ const validacionGenerarActa = [
   body('observaciones').optional()
 ];
 
-// Rutas
+router.use(verificarToken)
 router.get('/', actaController.obtenerActas);
 router.get('/estadisticas', actaController.obtenerEstadisticas);
 router.get('/generadas', actaController.obtenerActasGeneradas);

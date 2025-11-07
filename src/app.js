@@ -1,24 +1,33 @@
-const express = require('express')
+const express = require('express');
 const app = express();
-const cors = require('cors')
-require('./models')
+const cors = require('cors');
+const cookieParser = require('cookie-parser'); 
+require('./models');
 
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    credentials: true, 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.use(cookieParser()); 
 app.use(express.json());
-app.use(cors());
 
 const PORT = process.env.PORT || 4000;
 
 app.get('/', (req, res) => {
-    res.send('v.1.0.13')
-})
+    res.send('v.1.0.13');
+});
 
 app.use('/api/usuarios', require('./routes/Usuario'));
 app.use('/api/equipos', require('./routes/Equipo'));
 app.use('/api/historial', require('./routes/Historial'));
-app.use('/api/historial', require('./routes/Historial'));
 app.use('/api/auto-asignacion', require('./routes/autoAsignacion'));
 app.use('/api/actas', require('./routes/actas'));
+app.use('/api/auth', require('./routes/authRoutes'));
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port: ${PORT}`);
-})
+});

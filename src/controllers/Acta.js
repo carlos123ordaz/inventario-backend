@@ -1,4 +1,3 @@
-// controllers/Acta.js
 const Acta = require('../models/Acta');
 const ActaGenerada = require('../models/ActaGenerada');
 const Usuario = require('../models/Usuario');
@@ -8,21 +7,16 @@ const { validationResult } = require('express-validator');
 const GCSHelper = require('../utils/gcsHelper');
 const DocxProcessor = require('../utils/docxProcessor');
 
-// Obtener todas las actas
 exports.obtenerActas = async (req, res) => {
   try {
     const { estado, page = 1, limit = 10 } = req.query;
     let filtro = {};
-    
     if (estado) filtro.estado = estado;
-    
     const actas = await Acta.find(filtro)
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-    
     const total = await Acta.countDocuments(filtro);
-    
     res.json({
       success: true,
       data: actas,
@@ -41,7 +35,6 @@ exports.obtenerActas = async (req, res) => {
   }
 };
 
-// Obtener acta por ID
 exports.obtenerActaPorId = async (req, res) => {
   try {
     const acta = await Acta.findById(req.params.id);
@@ -66,7 +59,6 @@ exports.obtenerActaPorId = async (req, res) => {
   }
 };
 
-// Crear acta (subir template)
 exports.crearActa = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -83,27 +75,17 @@ exports.crearActa = async (req, res) => {
         message: 'Debe subir un archivo'
       });
     }
-
-    // Validar que sea un archivo Word
     if (!req.file.originalname.match(/\.(docx)$/)) {
       return res.status(400).json({
         success: false,
         message: 'Solo se permiten archivos .docx'
       });
     }
-
-    // Subir archivo a Google Cloud Storage
     const fileData = await GCSHelper.uploadTemplate(req.file);
-
-    // Extraer campos del documento
     const campos = await DocxProcessor.extractFields(req.file.buffer);
-
-    // Crear mapeo automático basado en los campos encontrados
     const mapeo = {};
     campos.forEach(campo => {
       const nombreLower = campo.nombre.toLowerCase();
-      
-      // Mapeo automático de campos comunes
       if (nombreLower.includes('nombre') && nombreLower.includes('completo')) {
         mapeo.usuario_nombreCompleto = campo.nombre;
       } else if (nombreLower.includes('nombre')) {
@@ -133,7 +115,6 @@ exports.crearActa = async (req, res) => {
       }
     });
 
-    // Crear acta
     const acta = await Acta.create({
       titulo: req.body.titulo,
       descripcion: req.body.descripcion || '',
@@ -160,7 +141,6 @@ exports.crearActa = async (req, res) => {
   }
 };
 
-// Actualizar acta
 exports.actualizarActa = async (req, res) => {
   try {
     const acta = await Acta.findByIdAndUpdate(
@@ -198,7 +178,6 @@ exports.actualizarActa = async (req, res) => {
   }
 };
 
-// Eliminar acta
 exports.eliminarActa = async (req, res) => {
   try {
     const acta = await Acta.findById(req.params.id);
@@ -209,16 +188,12 @@ exports.eliminarActa = async (req, res) => {
         message: 'Acta no encontrada'
       });
     }
-
-    // Eliminar archivo de GCS
     try {
       await GCSHelper.deleteFile(acta.bucketName, acta.archivoNombre);
     } catch (error) {
       console.error('Error al eliminar archivo de GCS:', error);
     }
-
     await acta.deleteOne();
-    
     res.json({
       success: true,
       message: 'Acta eliminada exitosamente'
@@ -232,12 +207,9 @@ exports.eliminarActa = async (req, res) => {
   }
 };
 
-// Generar acta para un usuario (con o sin equipo)
 exports.generarActa = async (req, res) => {
   try {
     const { actaId, usuarioId, equipoId, historialId, observaciones } = req.body;
-
-    // Validar que exista el acta
     const acta = await Acta.findById(actaId);
     if (!acta) {
       return res.status(404).json({
@@ -246,7 +218,6 @@ exports.generarActa = async (req, res) => {
       });
     }
 
-    // Validar que exista el usuario
     const usuario = await Usuario.findById(usuarioId);
     if (!usuario) {
       return res.status(404).json({
@@ -254,8 +225,6 @@ exports.generarActa = async (req, res) => {
         message: 'Usuario no encontrado'
       });
     }
-
-    // Obtener equipo e historial si se proporcionan
     let equipo = null;
     let historial = null;
 
@@ -272,34 +241,23 @@ exports.generarActa = async (req, res) => {
     if (historialId) {
       historial = await Historial.findById(historialId);
     } else if (equipoId) {
-      // Buscar asignación activa si no se proporciona historialId
       historial = await Historial.findOne({
         equipo: equipoId,
         usuario: usuarioId,
         activo: true
       });
     }
-
-    // Descargar template desde GCS
     const templateBuffer = await GCSHelper.downloadFile(
       acta.bucketName,
       acta.archivoNombre
     );
-
-    // Preparar datos para el template
     const templateData = DocxProcessor.prepareTemplateData(usuario, equipo, historial);
-
-    // Generar documento
     const generatedBuffer = await DocxProcessor.generateDocument(templateBuffer, templateData);
-
-    // Subir documento generado a GCS
     const generatedFilename = `${acta.titulo.replace(/\s+/g, '_')}-${usuario.dni}-${Date.now()}.docx`;
     const generatedFileData = await GCSHelper.uploadGenerated(
       generatedBuffer,
       generatedFilename
     );
-
-    // Registrar acta generada
     const actaGenerada = await ActaGenerada.create({
       acta: actaId,
       usuario: usuarioId,
@@ -313,12 +271,8 @@ exports.generarActa = async (req, res) => {
       observaciones: observaciones || ''
     });
 
-    // Actualizar contador de uso del acta
     await acta.registrarUso();
-
-    // Poblar datos para la respuesta
     await actaGenerada.populate('acta usuario equipo');
-
     res.status(201).json({
       success: true,
       message: 'Acta generada exitosamente',

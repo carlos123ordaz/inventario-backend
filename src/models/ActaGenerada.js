@@ -1,4 +1,3 @@
-// models/ActaGenerada.js
 const mongoose = require('mongoose');
 
 const actaGeneradaSchema = new mongoose.Schema({
@@ -25,8 +24,6 @@ const actaGeneradaSchema = new mongoose.Schema({
     ref: 'Historial',
     required: false
   },
-  
-  // Archivo generado en Google Cloud Storage
   archivoUrl: {
     type: String,
     required: true
@@ -40,7 +37,6 @@ const actaGeneradaSchema = new mongoose.Schema({
     required: true
   },
   
-  // Datos utilizados para generar el acta
   datosUtilizados: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
@@ -60,7 +56,6 @@ const actaGeneradaSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Índices
 actaGeneradaSchema.index({ usuario: 1, createdAt: -1 });
 actaGeneradaSchema.index({ acta: 1, createdAt: -1 });
 actaGeneradaSchema.index({ createdAt: -1 });

@@ -1,4 +1,3 @@
-// routes/autoAsignacion.js
 const express = require('express');
 const router = express.Router();
 const autoAsignacionController = require('../controllers/AutoAsignacion');

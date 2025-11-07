@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt')
 
 const usuarioSchema = new mongoose.Schema({
   dni: {
@@ -37,6 +38,9 @@ const usuarioSchema = new mongoose.Schema({
     lowercase: true,
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Por favor ingrese un correo válido']
   },
+  password: {
+    type: String
+  },
   telefono: {
     type: String,
     required: [true, 'El teléfono es requerido'],
@@ -73,12 +77,10 @@ const usuarioSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual para nombre completo
-usuarioSchema.virtual('nombreCompleto').get(function() {
+usuarioSchema.virtual('nombreCompleto').get(function () {
   return `${this.nombre} ${this.apellido}`;
 });
 
-// Virtual para obtener equipos asignados actualmente (se puede popular desde otro lado)
 usuarioSchema.virtual('equiposActuales', {
   ref: 'Historial',
   localField: '_id',
@@ -86,7 +88,16 @@ usuarioSchema.virtual('equiposActuales', {
   match: { activo: true }
 });
 
-// Índice compuesto para búsquedas
+usuarioSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+usuarioSchema.methods.compararPassword = function (password) {
+  return bcrypt.compare(password, this.password);
+};
+
 usuarioSchema.index({ nombre: 'text', apellido: 'text', correo: 'text' });
 
 module.exports = mongoose.model('Usuario', usuarioSchema);

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const usuarioController = require('../controllers/Usuario');
+const { verificarToken } = require('../middlewares/authMiddleware');
 
 const validacionUsuario = [
   body('dni').notEmpty().withMessage('El DNI es requerido'),
@@ -15,7 +16,7 @@ const validacionUsuario = [
   body('iniciales').notEmpty().withMessage('Las iniciales son requeridas')
 ];
 
-// ⚠️ IMPORTANTE: Las rutas específicas SIEMPRE deben ir ANTES de las rutas con parámetros
+router.use(verificarToken)
 router.get('/buscar', usuarioController.buscarUsuarios);
 router.get('/:id/historial', usuarioController.obtenerHistorialUsuario);
 router.get('/:id', usuarioController.obtenerUsuarioPorId);

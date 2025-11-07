@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const equipoController = require('../controllers/Equipo');
+const { verificarToken } = require('../middlewares/authMiddleware');
 
 
 const validacionEquipo = [
@@ -16,7 +17,7 @@ const validacionEquipo = [
   body('memoria').notEmpty().withMessage('La memoria es requerida')
 ];
 
-// Rutas
+router.use(verificarToken)
 router.get('/', equipoController.obtenerEquipos);
 router.get('/estadisticas', equipoController.obtenerEstadisticas);
 router.get('/buscar', equipoController.buscarEquipos);
