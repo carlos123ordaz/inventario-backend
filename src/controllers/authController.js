@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: "lax",
+            sameSite: "none",
             maxAge: 3600000 
         });
         const usuarioData = await Usuario.findById(usuario._id).select('-password')
