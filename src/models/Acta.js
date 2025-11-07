@@ -66,12 +66,10 @@ const actaSchema = new mongoose.Schema({
     equipo_fechaCompra: String,
     equipo_antiguedad: String,
     
-    asignacion_fechaAsignacion: String,
-    asignacion_tipoUso: String,
-    asignacion_observaciones: String,
-    
-    fecha_actual: String,
-    fecha_generacion: String
+    fecha:String,
+    nombre:String,
+    cargo:String,
+    dni:String
   },
   
   estado: {

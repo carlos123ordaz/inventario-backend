@@ -38,14 +38,14 @@ exports.obtenerActas = async (req, res) => {
 exports.obtenerActaPorId = async (req, res) => {
   try {
     const acta = await Acta.findById(req.params.id);
-    
+
     if (!acta) {
       return res.status(404).json({
         success: false,
         message: 'Acta no encontrada'
       });
     }
-    
+
     res.json({
       success: true,
       data: acta
@@ -156,14 +156,14 @@ exports.actualizarActa = async (req, res) => {
         runValidators: true
       }
     );
-    
+
     if (!acta) {
       return res.status(404).json({
         success: false,
         message: 'Acta no encontrada'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Acta actualizada exitosamente',
@@ -181,7 +181,7 @@ exports.actualizarActa = async (req, res) => {
 exports.eliminarActa = async (req, res) => {
   try {
     const acta = await Acta.findById(req.params.id);
-    
+
     if (!acta) {
       return res.status(404).json({
         success: false,
@@ -217,7 +217,6 @@ exports.generarActa = async (req, res) => {
         message: 'Plantilla de acta no encontrada'
       });
     }
-
     const usuario = await Usuario.findById(usuarioId);
     if (!usuario) {
       return res.status(404).json({
@@ -226,8 +225,6 @@ exports.generarActa = async (req, res) => {
       });
     }
     let equipo = null;
-    let historial = null;
-
     if (equipoId) {
       equipo = await Equipo.findById(equipoId);
       if (!equipo) {
@@ -238,20 +235,18 @@ exports.generarActa = async (req, res) => {
       }
     }
 
-    if (historialId) {
-      historial = await Historial.findById(historialId);
-    } else if (equipoId) {
-      historial = await Historial.findOne({
-        equipo: equipoId,
-        usuario: usuarioId,
-        activo: true
+    const userBy = await Usuario.findById(req.user.id);
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no autenticado'
       });
     }
     const templateBuffer = await GCSHelper.downloadFile(
       acta.bucketName,
       acta.archivoNombre
     );
-    const templateData = DocxProcessor.prepareTemplateData(usuario, equipo, historial);
+    const templateData = DocxProcessor.prepareTemplateData(usuario, equipo,userBy);
     const generatedBuffer = await DocxProcessor.generateDocument(templateBuffer, templateData);
     const generatedFilename = `${acta.titulo.replace(/\s+/g, '_')}-${usuario.dni}-${Date.now()}.docx`;
     const generatedFileData = await GCSHelper.uploadGenerated(
@@ -293,11 +288,11 @@ exports.obtenerActasGeneradas = async (req, res) => {
   try {
     const { usuarioId, equipoId, actaId, page = 1, limit = 10 } = req.query;
     let filtro = {};
-    
+
     if (usuarioId) filtro.usuario = usuarioId;
     if (equipoId) filtro.equipo = equipoId;
     if (actaId) filtro.acta = actaId;
-    
+
     const actasGeneradas = await ActaGenerada.find(filtro)
       .populate('acta', 'titulo descripcion')
       .populate('usuario', 'nombre apellido dni area')
@@ -305,9 +300,9 @@ exports.obtenerActasGeneradas = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-    
+
     const total = await ActaGenerada.countDocuments(filtro);
-    
+
     res.json({
       success: true,
       data: actasGeneradas,
@@ -332,12 +327,12 @@ exports.obtenerEstadisticas = async (req, res) => {
     const totalActas = await Acta.countDocuments();
     const actasActivas = await Acta.countDocuments({ estado: 'Activa' });
     const totalGeneradas = await ActaGenerada.countDocuments();
-    
+
     const actasMasUsadas = await Acta.find()
       .sort({ vecesUtilizada: -1 })
       .limit(5)
       .select('titulo descripcion vecesUtilizada ultimoUso');
-    
+
     const generadasPorMes = await ActaGenerada.aggregate([
       {
         $group: {

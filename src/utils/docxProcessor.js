@@ -1,4 +1,5 @@
 const Docxtemplater = require('docxtemplater');
+const moment = require('moment');
 const PizZip = require('pizzip');
 
 class DocxProcessor {
@@ -17,7 +18,7 @@ class DocxProcessor {
       const content = zip.file('word/document.xml').asText();
       const textOnly = content
         .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' '); 
+        .replace(/\s+/g, ' ');
 
       const regex = /\{\{([^}]+)\}\}/g;
       const matches = textOnly.match(regex) || [];
@@ -26,7 +27,7 @@ class DocxProcessor {
           .map(match => match.replace(/[{}]/g, '').trim())
           .filter(tag => tag.length > 0 && !tag.includes('<') && !tag.includes('>'))
       )];
-       
+
       return uniqueTags.map(tag => ({
         nombre: tag,
         tipo: this.inferFieldType(tag),
@@ -46,12 +47,12 @@ class DocxProcessor {
 
   static inferFieldCategory(fieldName) {
     const lowerName = fieldName.toLowerCase();
-    if (lowerName.includes('usuario') || lowerName.includes('nombre') || lowerName.includes('dni') || 
-        lowerName.includes('cargo') || lowerName.includes('area') || lowerName.includes('correo')) {
+    if (lowerName.includes('usuario') || lowerName.includes('nombre') || lowerName.includes('dni') ||
+      lowerName.includes('cargo') || lowerName.includes('area') || lowerName.includes('correo')) {
       return 'usuario';
     }
-    if (lowerName.includes('equipo') || lowerName.includes('marca') || lowerName.includes('modelo') || 
-        lowerName.includes('serie') || lowerName.includes('host') || lowerName.includes('procesador')) {
+    if (lowerName.includes('equipo') || lowerName.includes('marca') || lowerName.includes('modelo') ||
+      lowerName.includes('serie') || lowerName.includes('host') || lowerName.includes('procesador')) {
       return 'equipo';
     }
     return 'general';
@@ -81,7 +82,7 @@ class DocxProcessor {
       return buffer;
     } catch (error) {
       console.error('Error detallado al generar documento:', error);
-      
+
       if (error.properties && error.properties.errors) {
         const errorMessages = error.properties.errors
           .slice(0, 3)
@@ -89,7 +90,7 @@ class DocxProcessor {
           .join(', ');
         throw new Error(`Error en el formato del documento: ${errorMessages}. Las etiquetas deben escribirse sin formato especial.`);
       }
-      
+
       throw new Error(`Error al generar documento: ${error.message}`);
     }
   }
@@ -110,15 +111,16 @@ class DocxProcessor {
     return formatted;
   }
   static formatDate(date) {
-    const options = { 
-      year: 'numeric', 
-      month: 'long', 
+    const options = {
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
       timeZone: 'America/Lima'
     };
     return new Date(date).toLocaleDateString('es-PE', options);
   }
-  static prepareTemplateData(usuario, equipo = null, historial = null) {
+  static prepareTemplateData(usuario, equipo = null, userBy = null) {
+    console.log('userby: ',userBy)
     const data = {
       usuario_nombre: usuario.nombre || '',
       usuario_apellido: usuario.apellido || '',
@@ -142,18 +144,18 @@ class DocxProcessor {
       data.equipo_procesador = equipo.procesador || '';
       data.equipo_memoria = equipo.memoria || '';
       data.equipo_almacenamiento = equipo.almacenamiento || '';
-      data.equipo_almacenamient = equipo.almacenamiento || ''; 
+      data.equipo_almacenamient = equipo.almacenamiento || '';
       data.equipo_pantalla = equipo.pantalla || '';
       data.equipo_gpu = equipo.tarjetaGrafica || '';
       data.equipo_fechaCompra = equipo.fechaCompra ? this.formatDate(equipo.fechaCompra) : '';
       data.equipo_antiguedad = equipo.antiguedad ? `${equipo.antiguedad} años` : '';
     }
-    if (historial) {
-      data.asignacion_fechaAsignacion = historial.fechaAsignacion ? this.formatDate(historial.fechaAsignacion) : '';
-      data.asignacion_tipoUso = historial.tipoUso || '';
-      data.asignacion_observaciones = historial.observaciones || '';
-      data.asignacion_tiempoUso = historial.tiempoUso ? `${historial.tiempoUso} días` : '';
+    if (userBy) {
+      data.name = `${userBy.nombre} ${userBy.apellido}`;
+      data.cargo = userBy.cargo;
+      data.dni = userBy.dni;
     }
+    data.fecha = moment().format('DD-MM-YYYY')
     return data;
   }
 }

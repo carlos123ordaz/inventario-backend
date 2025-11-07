@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { auditPlugin } = require('../utils/auditPlugin');
 
 const equipoSchema = new mongoose.Schema({
   equipo: {
@@ -148,5 +149,7 @@ equipoSchema.index({ marca: 'text', modelo: 'text', serie: 'text', host: 'text' 
 equipoSchema.methods.estaDisponible = function() {
   return this.estado === 'Disponible';
 };
+
+equipoSchema.plugin(auditPlugin, { collectionName: 'equipos' });
 
 module.exports = mongoose.model('Equipo', equipoSchema);

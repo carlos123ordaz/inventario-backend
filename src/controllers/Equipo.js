@@ -6,13 +6,13 @@ exports.obtenerEquipos = async (req, res) => {
   try {
     const { estado, equipo, marca, page = 1, limit = 10 } = req.query;
     let filtro = {};
-    
+
     if (estado) filtro.estado = estado;
     if (equipo) filtro.equipo = equipo;
     if (marca) filtro.marca = marca;
-    
+
     const skip = (page - 1) * limit;
-    
+
     const equipos = await Equipo.aggregate([
       { $match: filtro },
       { $sort: { createdAt: -1 } },
@@ -59,9 +59,9 @@ exports.obtenerEquipos = async (req, res) => {
         }
       }
     ]);
-    
+
     const total = await Equipo.countDocuments(filtro);
-    
+
     res.json({
       success: true,
       data: equipos,
@@ -83,21 +83,21 @@ exports.obtenerEquipos = async (req, res) => {
 exports.obtenerEquipoPorId = async (req, res) => {
   try {
     const equipo = await Equipo.findById(req.params.id);
-    
+
     if (!equipo) {
       return res.status(404).json({
         success: false,
         message: 'Equipo no encontrado'
       });
     }
-    
+
     const asignacionActual = await Historial.findOne({
       equipo: equipo._id,
       activo: true
     }).populate('usuario', 'nombre apellido area cargo correo');
-    
+
     const historial = await Historial.historialDeEquipo(equipo._id);
-    
+
     res.json({
       success: true,
       data: {
@@ -124,9 +124,11 @@ exports.crearEquipo = async (req, res) => {
         errors: errors.array()
       });
     }
-    
-    const equipo = await Equipo.create(req.body);
-    
+
+    const equipo = new Equipo(req.body);
+    equipo._modifiedBy = req.user.id;
+    await equipo.save();
+
     res.status(201).json({
       success: true,
       message: 'Equipo creado exitosamente',
@@ -140,7 +142,7 @@ exports.crearEquipo = async (req, res) => {
         message: 'El número de serie ya está registrado'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al crear equipo',
@@ -160,23 +162,24 @@ exports.actualizarEquipo = async (req, res) => {
         });
       }
     }
-    
+
     const equipo = await Equipo.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
         new: true,
-        runValidators: true
+        runValidators: true,
+        user: req.user.id
       }
     );
-    
+
     if (!equipo) {
       return res.status(404).json({
         success: false,
         message: 'Equipo no encontrado'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Equipo actualizado exitosamente',
@@ -189,7 +192,7 @@ exports.actualizarEquipo = async (req, res) => {
         message: 'El número de serie ya está registrado'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al actualizar equipo',
@@ -198,30 +201,23 @@ exports.actualizarEquipo = async (req, res) => {
   }
 };
 
-// Eliminar equipo
 exports.eliminarEquipo = async (req, res) => {
   try {
     const equipo = await Equipo.findById(req.params.id);
-    
     if (!equipo) {
       return res.status(404).json({
         success: false,
         message: 'Equipo no encontrado'
       });
     }
-    
-    // Verificar si tiene asignación activa
     const tieneAsignacion = await Historial.tieneAsignacionActiva(req.params.id);
-    
     if (tieneAsignacion) {
       return res.status(400).json({
         success: false,
         message: 'No se puede eliminar el equipo porque tiene una asignación activa'
       });
     }
-    
-    await equipo.deleteOne();
-    
+    await Equipo.findByIdAndDelete(req.params.id, { user: req.user.id });
     res.json({
       success: true,
       message: 'Equipo eliminado exitosamente'
@@ -238,14 +234,14 @@ exports.eliminarEquipo = async (req, res) => {
 exports.buscarEquipos = async (req, res) => {
   try {
     const { termino } = req.query;
-    
+
     if (!termino) {
       return res.status(400).json({
         success: false,
         message: 'Debe proporcionar un término de búsqueda'
       });
     }
-    
+
     const equipos = await Equipo.find({
       $or: [
         { marca: { $regex: termino, $options: 'i' } },
@@ -255,7 +251,7 @@ exports.buscarEquipos = async (req, res) => {
         { procesador: { $regex: termino, $options: 'i' } }
       ]
     }).limit(20);
-    
+
     res.json({
       success: true,
       count: equipos.length,
@@ -277,7 +273,7 @@ exports.obtenerEstadisticas = async (req, res) => {
     const enUso = await Equipo.countDocuments({ estado: 'En Uso' });
     const enMantenimiento = await Equipo.countDocuments({ estado: 'Mantenimiento' });
     const dadoDeBaja = await Equipo.countDocuments({ estado: 'Dado de Baja' });
-    
+
     const porTipo = await Equipo.aggregate([
       {
         $group: {
@@ -286,7 +282,7 @@ exports.obtenerEstadisticas = async (req, res) => {
         }
       }
     ]);
-    
+
     const porMarca = await Equipo.aggregate([
       {
         $group: {
@@ -297,7 +293,7 @@ exports.obtenerEstadisticas = async (req, res) => {
       { $sort: { cantidad: -1 } },
       { $limit: 10 }
     ]);
-    
+
     const porEstado = await Equipo.aggregate([
       {
         $group: {
@@ -306,12 +302,12 @@ exports.obtenerEstadisticas = async (req, res) => {
         }
       }
     ]);
-    
+
     const equiposAntiguos = await Equipo.find()
       .sort({ antiguedad: -1 })
       .limit(5)
       .select('marca modelo serie antiguedad estado');
-    
+
     res.json({
       success: true,
       data: {
