@@ -1,18 +1,17 @@
-const Equipo = require('../models/Equipo');
 const Historial = require('../models/Historial');
 const { validationResult } = require('express-validator');
+const Equipo = require('../models/Equipo');
 
 exports.obtenerEquipos = async (req, res) => {
   try {
-    const { estado, equipo, marca, page = 1, limit = 10 } = req.query;
+    const { estado, tipo, marca, page = 1, limit = 10 } = req.query;
     let filtro = {};
 
     if (estado) filtro.estado = estado;
-    if (equipo) filtro.equipo = equipo;
+    if (tipo) filtro.tipo = tipo;
     if (marca) filtro.marca = marca;
 
     const skip = (page - 1) * limit;
-
     const equipos = await Equipo.aggregate([
       { $match: filtro },
       { $sort: { createdAt: -1 } },
@@ -72,6 +71,7 @@ exports.obtenerEquipos = async (req, res) => {
       }
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       success: false,
       message: 'Error al obtener equipos',
@@ -87,7 +87,7 @@ exports.obtenerEquipoPorId = async (req, res) => {
     if (!equipo) {
       return res.status(404).json({
         success: false,
-        message: 'Equipo no encontrado'
+        message: 'tipo no encontrado'
       });
     }
 
@@ -97,7 +97,6 @@ exports.obtenerEquipoPorId = async (req, res) => {
     }).populate('usuario', 'nombre apellido area cargo correo');
 
     const historial = await Historial.historialDeEquipo(equipo._id);
-
     res.json({
       success: true,
       data: {
@@ -109,7 +108,7 @@ exports.obtenerEquipoPorId = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error al obtener equipo',
+      message: 'Error al obtener tipo',
       error: error.message
     });
   }
@@ -125,14 +124,14 @@ exports.crearEquipo = async (req, res) => {
       });
     }
 
-    const equipo = new Equipo(req.body);
-    equipo._modifiedBy = req.user.id;
-    await equipo.save();
+    const tipo = new Equipo(req.body);
+    tipo._modifiedBy = req.user.id;
+    await tipo.save();
 
     res.status(201).json({
       success: true,
-      message: 'Equipo creado exitosamente',
-      data: equipo
+      message: 'tipo creado exitosamente',
+      data: tipo
     });
   } catch (error) {
     console.log(error)
@@ -145,7 +144,7 @@ exports.crearEquipo = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Error al crear equipo',
+      message: 'Error al crear tipo',
       error: error.message
     });
   }
@@ -163,7 +162,7 @@ exports.actualizarEquipo = async (req, res) => {
       }
     }
 
-    const equipo = await Equipo.findByIdAndUpdate(
+    const tipo = await tipo.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -173,17 +172,17 @@ exports.actualizarEquipo = async (req, res) => {
       }
     );
 
-    if (!equipo) {
+    if (!tipo) {
       return res.status(404).json({
         success: false,
-        message: 'Equipo no encontrado'
+        message: 'tipo no encontrado'
       });
     }
 
     res.json({
       success: true,
-      message: 'Equipo actualizado exitosamente',
-      data: equipo
+      message: 'tipo actualizado exitosamente',
+      data: tipo
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -195,7 +194,7 @@ exports.actualizarEquipo = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar equipo',
+      message: 'Error al actualizar tipo',
       error: error.message
     });
   }
@@ -207,25 +206,25 @@ exports.eliminarEquipo = async (req, res) => {
     if (!equipo) {
       return res.status(404).json({
         success: false,
-        message: 'Equipo no encontrado'
+        message: 'tipo no encontrado'
       });
     }
     const tieneAsignacion = await Historial.tieneAsignacionActiva(req.params.id);
     if (tieneAsignacion) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar el equipo porque tiene una asignación activa'
+        message: 'No se puede eliminar el tipo porque tiene una asignación activa'
       });
     }
     await Equipo.findByIdAndDelete(req.params.id, { user: req.user.id });
     res.json({
       success: true,
-      message: 'Equipo eliminado exitosamente'
+      message: 'tipo eliminado exitosamente'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error al eliminar equipo',
+      message: 'Error al eliminar tipo',
       error: error.message
     });
   }
@@ -234,7 +233,6 @@ exports.eliminarEquipo = async (req, res) => {
 exports.buscarEquipos = async (req, res) => {
   try {
     const { termino } = req.query;
-
     if (!termino) {
       return res.status(400).json({
         success: false,
@@ -251,7 +249,6 @@ exports.buscarEquipos = async (req, res) => {
         { procesador: { $regex: termino, $options: 'i' } }
       ]
     }).limit(20);
-
     res.json({
       success: true,
       count: equipos.length,
@@ -277,7 +274,7 @@ exports.obtenerEstadisticas = async (req, res) => {
     const porTipo = await Equipo.aggregate([
       {
         $group: {
-          _id: '$equipo',
+          _id: '$tipo',
           cantidad: { $sum: 1 }
         }
       }

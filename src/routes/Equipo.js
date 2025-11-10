@@ -6,15 +6,10 @@ const { verificarToken } = require('../middlewares/authMiddleware');
 
 
 const validacionEquipo = [
-  body('equipo').isIn(['LAPTOP', 'DESKTOP']).withMessage('Tipo de equipo inválido'),
+  body('tipo').isIn(['LAPTOP', 'DESKTOP', 'MOUSE', 'MONITOR', 'TECLADO','COOLER','OTRO']).withMessage('Tipo de equipo inválido'),
   body('marca').notEmpty().withMessage('La marca es requerida'),
   body('modelo').notEmpty().withMessage('El modelo es requerido'),
   body('serie').notEmpty().withMessage('El número de serie es requerido'),
-  body('host').notEmpty().withMessage('El host es requerido'),
-  body('fechaCompra').isISO8601().withMessage('Fecha de compra inválida'),
-  body('procesador').notEmpty().withMessage('El procesador es requerido'),
-  body('almacenamiento').notEmpty().withMessage('El almacenamiento es requerido'),
-  body('memoria').notEmpty().withMessage('La memoria es requerida')
 ];
 
 router.use(verificarToken)

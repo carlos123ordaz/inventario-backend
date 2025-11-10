@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const { auditPlugin } = require('../utils/auditPlugin');
 
 const equipoSchema = new mongoose.Schema({
-  equipo: {
+  tipo: {
     type: String,
-    enum: ['LAPTOP', 'DESKTOP'],
+    enum: ['LAPTOP', 'DESKTOP', 'MOUSE', 'MONITOR', 'COOLER', 'TECLADO', 'CELULAR','OTRO'],
     required: [true, 'El tipo de equipo es requerido'],
     index: true
   },
@@ -29,7 +29,6 @@ const equipoSchema = new mongoose.Schema({
   },
   host: {
     type: String,
-    required: [true, 'El nombre del host es requerido'],
     trim: true,
     uppercase: true
   },
@@ -51,7 +50,7 @@ const equipoSchema = new mongoose.Schema({
   },
   primerUso: {
     type: Date,
-    default: function() {
+    default: function () {
       return this.fechaCompra;
     }
   },
@@ -59,20 +58,17 @@ const equipoSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  
+
   procesador: {
     type: String,
-    required: [true, 'El procesador es requerido'],
     trim: true
   },
   almacenamiento: {
     type: String,
-    required: [true, 'El almacenamiento es requerido'],
     trim: true
   },
   memoria: {
     type: String,
-    required: [true, 'La memoria RAM es requerida'],
     trim: true
   },
   pantalla: {
@@ -85,7 +81,7 @@ const equipoSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
-  
+
   puertoRed: {
     type: Boolean,
     default: false
@@ -106,7 +102,7 @@ const equipoSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  
+
   observaciones: {
     type: String,
     trim: true,
@@ -118,13 +114,13 @@ const equipoSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-equipoSchema.pre('save', function(next) {
+equipoSchema.pre('save', function (next) {
   if (this.fechaCompra) {
     const hoy = new Date();
     const compra = new Date(this.fechaCompra);
     const diffTime = Math.abs(hoy - compra);
     const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-    this.antiguedad = Math.round(diffYears * 10) / 10; 
+    this.antiguedad = Math.round(diffYears * 10) / 10;
   }
   next();
 });
@@ -146,7 +142,7 @@ equipoSchema.virtual('asignacionActual', {
 equipoSchema.index({ estado: 1, equipo: 1 });
 equipoSchema.index({ marca: 'text', modelo: 'text', serie: 'text', host: 'text' });
 
-equipoSchema.methods.estaDisponible = function() {
+equipoSchema.methods.estaDisponible = function () {
   return this.estado === 'Disponible';
 };
 

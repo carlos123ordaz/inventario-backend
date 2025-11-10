@@ -120,7 +120,6 @@ class DocxProcessor {
     return new Date(date).toLocaleDateString('es-PE', options);
   }
   static prepareTemplateData(usuario, equipo = null, userBy = null) {
-    console.log('userby: ',userBy)
     const data = {
       usuario_nombre: usuario.nombre || '',
       usuario_apellido: usuario.apellido || '',

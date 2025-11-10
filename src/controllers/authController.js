@@ -4,7 +4,7 @@ const Usuario = require("../models/Usuario.js");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const generarToken = (userId) => {
-    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "1d" });
+    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "3d" });
 };
 
 exports.login = async (req, res) => {
