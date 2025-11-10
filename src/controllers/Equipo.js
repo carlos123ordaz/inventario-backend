@@ -1,6 +1,7 @@
 const Historial = require('../models/Historial');
 const { validationResult } = require('express-validator');
 const Equipo = require('../models/Equipo');
+const Usuario = require('../models/Usuario');
 
 exports.obtenerEquipos = async (req, res) => {
   try {
@@ -266,6 +267,7 @@ exports.buscarEquipos = async (req, res) => {
 exports.obtenerEstadisticas = async (req, res) => {
   try {
     const totalEquipos = await Equipo.countDocuments();
+    const totalUsuarios = await Usuario.countDocuments();
     const disponibles = await Equipo.countDocuments({ estado: 'Disponible' });
     const enUso = await Equipo.countDocuments({ estado: 'En Uso' });
     const enMantenimiento = await Equipo.countDocuments({ estado: 'Mantenimiento' });
@@ -310,6 +312,7 @@ exports.obtenerEstadisticas = async (req, res) => {
       data: {
         resumen: {
           totalEquipos,
+          totalUsuarios,
           disponibles,
           enUso,
           enMantenimiento,
