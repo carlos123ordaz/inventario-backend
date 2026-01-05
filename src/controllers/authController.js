@@ -4,32 +4,32 @@ const Usuario = require("../models/Usuario.js");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const generarToken = (userId) => {
-    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "3d" });
+    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "7d" });
 };
 
 exports.login = async (req, res) => {
     try {
         const { correo, password } = req.body;
         const usuario = await Usuario.findOne({ correo }).select('+password');
-        
+
         if (!usuario) {
             return res.status(404).json({ error: "Usuario no encontrado" });
         }
         const valido = await usuario.compararPassword(password);
-        
+
         if (!valido) {
             return res.status(401).json({ error: "Contraseña incorrecta" });
         }
-        
+
         const token = generarToken(usuario._id);
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? "none":'lax',
-            maxAge: 3600000 
+            sameSite: process.env.NODE_ENV === 'production' ? "none" : 'lax',
+            maxAge: 3600000
         });
         const usuarioData = await Usuario.findById(usuario._id).select('-password')
-        res.json({ 
+        res.json({
             message: "Inicio de sesión exitoso",
             user: {
                 id: usuarioData._id,

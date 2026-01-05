@@ -88,7 +88,7 @@ exports.obtenerEquipoPorId = async (req, res) => {
     if (!equipo) {
       return res.status(404).json({
         success: false,
-        message: 'tipo no encontrado'
+        message: 'Equipo no encontrado'
       });
     }
 
@@ -109,7 +109,7 @@ exports.obtenerEquipoPorId = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error al obtener tipo',
+      message: 'Error al obtener equipo',
       error: error.message
     });
   }
@@ -125,14 +125,14 @@ exports.crearEquipo = async (req, res) => {
       });
     }
 
-    const tipo = new Equipo(req.body);
-    tipo._modifiedBy = req.user.id;
-    await tipo.save();
+    const equipo = new Equipo(req.body);
+    equipo._modifiedBy = req.user.id;
+    await equipo.save();
 
     res.status(201).json({
       success: true,
-      message: 'tipo creado exitosamente',
-      data: tipo
+      message: 'Equipo creado exitosamente',
+      data: equipo
     });
   } catch (error) {
     console.log(error)
@@ -145,7 +145,7 @@ exports.crearEquipo = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Error al crear tipo',
+      message: 'Error al crear equipo',
       error: error.message
     });
   }
@@ -163,7 +163,8 @@ exports.actualizarEquipo = async (req, res) => {
       }
     }
 
-    const tipo = await tipo.findByIdAndUpdate(
+    // BUG CORREGIDO: Cambié 'tipo' por 'Equipo'
+    const equipo = await Equipo.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
@@ -173,17 +174,17 @@ exports.actualizarEquipo = async (req, res) => {
       }
     );
 
-    if (!tipo) {
+    if (!equipo) {
       return res.status(404).json({
         success: false,
-        message: 'tipo no encontrado'
+        message: 'Equipo no encontrado'
       });
     }
 
     res.json({
       success: true,
-      message: 'tipo actualizado exitosamente',
-      data: tipo
+      message: 'Equipo actualizado exitosamente',
+      data: equipo
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -195,7 +196,7 @@ exports.actualizarEquipo = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: 'Error al actualizar tipo',
+      message: 'Error al actualizar equipo',
       error: error.message
     });
   }
@@ -207,25 +208,25 @@ exports.eliminarEquipo = async (req, res) => {
     if (!equipo) {
       return res.status(404).json({
         success: false,
-        message: 'tipo no encontrado'
+        message: 'Equipo no encontrado'
       });
     }
     const tieneAsignacion = await Historial.tieneAsignacionActiva(req.params.id);
     if (tieneAsignacion) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede eliminar el tipo porque tiene una asignación activa'
+        message: 'No se puede eliminar el equipo porque tiene una asignación activa'
       });
     }
     await Equipo.findByIdAndDelete(req.params.id, { user: req.user.id });
     res.json({
       success: true,
-      message: 'tipo eliminado exitosamente'
+      message: 'Equipo eliminado exitosamente'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error al eliminar tipo',
+      message: 'Error al eliminar equipo',
       error: error.message
     });
   }

@@ -4,7 +4,7 @@ const { auditPlugin } = require('../utils/auditPlugin');
 const equipoSchema = new mongoose.Schema({
   tipo: {
     type: String,
-    enum: ['LAPTOP', 'DESKTOP', 'MOUSE', 'MONITOR', 'COOLER', 'TECLADO', 'CELULAR','OTRO'],
+    enum: ['LAPTOP', 'DESKTOP', 'MOUSE', 'MONITOR', 'COOLER', 'TECLADO', 'CELULAR', 'OTRO'],
     required: [true, 'El tipo de equipo es requerido'],
     index: true
   },
@@ -103,6 +103,53 @@ const equipoSchema = new mongoose.Schema({
     default: false
   },
 
+  clavesBIOS: {
+    contrasena: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    notas: {
+      type: String,
+      trim: true,
+      default: ''
+    }
+  },
+  clavesAdministrador: {
+    usuario: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    contrasena: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    notas: {
+      type: String,
+      trim: true,
+      default: ''
+    }
+  },
+  clavesEquipo: {
+    usuario: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    contrasena: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    notas: {
+      type: String,
+      trim: true,
+      default: ''
+    }
+  },
+
   observaciones: {
     type: String,
     trim: true,
@@ -139,11 +186,19 @@ equipoSchema.virtual('asignacionActual', {
   match: { activo: true }
 });
 
-equipoSchema.index({ estado: 1, equipo: 1 });
+equipoSchema.index({ estado: 1, tipo: 1 });
 equipoSchema.index({ marca: 'text', modelo: 'text', serie: 'text', host: 'text' });
 
 equipoSchema.methods.estaDisponible = function () {
   return this.estado === 'Disponible';
+};
+
+equipoSchema.methods.tieneClavesSecuridad = function () {
+  return (this.tipo === 'LAPTOP' || this.tipo === 'DESKTOP') &&
+    (this.clavesBIOS.contrasena ||
+      this.clavesAdministrador.contrasena ||
+      this.clavesEquipo.contrasena ||
+      this.PIN.valor);
 };
 
 equipoSchema.plugin(auditPlugin, { collectionName: 'equipos' });
