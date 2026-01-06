@@ -3,8 +3,12 @@ const Usuario = require("../models/Usuario.js");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Definir la expiración en un lugar centralizado
+const TOKEN_EXPIRY = "7d";
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 días en milisegundos
+
 const generarToken = (userId) => {
-    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "7d" });
+    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 };
 
 exports.login = async (req, res) => {
@@ -26,7 +30,7 @@ exports.login = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? "none" : 'lax',
-            maxAge: 3600000
+            maxAge: COOKIE_MAX_AGE // 7 días
         });
         const usuarioData = await Usuario.findById(usuario._id).select('-password')
         res.json({

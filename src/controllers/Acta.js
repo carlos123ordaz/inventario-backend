@@ -246,7 +246,7 @@ exports.generarActa = async (req, res) => {
       acta.bucketName,
       acta.archivoNombre
     );
-    const templateData = DocxProcessor.prepareTemplateData(usuario, equipo,userBy);
+    const templateData = DocxProcessor.prepareTemplateData(usuario, equipo, userBy);
     const generatedBuffer = await DocxProcessor.generateDocument(templateBuffer, templateData);
     const generatedFilename = `${acta.titulo.replace(/\s+/g, '_')}-${usuario.dni}-${Date.now()}.docx`;
     const generatedFileData = await GCSHelper.uploadGenerated(
