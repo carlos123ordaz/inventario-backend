@@ -15,7 +15,7 @@ router.use(verificarToken);
 
 // IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
 router.get('/estadisticas', equipoController.obtenerEstadisticas);
-router.get('/buscar', equipoController.buscarEquipos);
+
 
 // Rutas con parámetros van al final
 router.get('/', equipoController.obtenerEquipos);

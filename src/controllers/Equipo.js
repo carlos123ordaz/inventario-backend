@@ -3,21 +3,46 @@ const { validationResult } = require('express-validator');
 const Equipo = require('../models/Equipo');
 const Usuario = require('../models/Usuario');
 
+/**
+ * Obtiene equipos con búsqueda, filtros y paginación unificados
+ * Query params soportados:
+ * - termino: búsqueda por marca, modelo, serie, host, procesador
+ * - estado: filtro por estado
+ * - tipo: filtro por tipo de equipo
+ * - marca: filtro por marca
+ * - page: número de página (default: 1)
+ * - limit: límite por página (default: 10)
+ */
 exports.obtenerEquipos = async (req, res) => {
   try {
-    const { estado, tipo, marca, page = 1, limit = 10 } = req.query;
+    const { termino, estado, tipo, marca, page = 1, limit = 10 } = req.query;
     let filtro = {};
 
+    // Construcción del filtro
     if (estado) filtro.estado = estado;
     if (tipo) filtro.tipo = tipo;
     if (marca) filtro.marca = marca;
 
-    const skip = (page - 1) * limit;
+    // Búsqueda por término si se proporciona
+    if (termino && termino.trim()) {
+      filtro.$or = [
+        { marca: { $regex: termino, $options: 'i' } },
+        { modelo: { $regex: termino, $options: 'i' } },
+        { serie: { $regex: termino, $options: 'i' } },
+        { host: { $regex: termino, $options: 'i' } },
+        { procesador: { $regex: termino, $options: 'i' } }
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const skip = (pageNum - 1) * limitNum;
+
     const equipos = await Equipo.aggregate([
       { $match: filtro },
       { $sort: { createdAt: -1 } },
       { $skip: skip },
-      { $limit: parseInt(limit) },
+      { $limit: limitNum },
       {
         $lookup: {
           from: 'historials',
@@ -67,12 +92,13 @@ exports.obtenerEquipos = async (req, res) => {
       data: equipos,
       pagination: {
         total,
-        page: parseInt(page),
-        pages: Math.ceil(total / limit)
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum)
       }
     });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener equipos',
@@ -135,7 +161,7 @@ exports.crearEquipo = async (req, res) => {
       data: equipo
     });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -163,7 +189,6 @@ exports.actualizarEquipo = async (req, res) => {
       }
     }
 
-    // BUG CORREGIDO: Cambié 'tipo' por 'Equipo'
     const equipo = await Equipo.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -211,6 +236,7 @@ exports.eliminarEquipo = async (req, res) => {
         message: 'Equipo no encontrado'
       });
     }
+
     const tieneAsignacion = await Historial.tieneAsignacionActiva(req.params.id);
     if (tieneAsignacion) {
       return res.status(400).json({
@@ -218,6 +244,7 @@ exports.eliminarEquipo = async (req, res) => {
         message: 'No se puede eliminar el equipo porque tiene una asignación activa'
       });
     }
+
     await Equipo.findByIdAndDelete(req.params.id, { user: req.user.id });
     res.json({
       success: true,
@@ -227,39 +254,6 @@ exports.eliminarEquipo = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al eliminar equipo',
-      error: error.message
-    });
-  }
-};
-
-exports.buscarEquipos = async (req, res) => {
-  try {
-    const { termino } = req.query;
-    if (!termino) {
-      return res.status(400).json({
-        success: false,
-        message: 'Debe proporcionar un término de búsqueda'
-      });
-    }
-
-    const equipos = await Equipo.find({
-      $or: [
-        { marca: { $regex: termino, $options: 'i' } },
-        { modelo: { $regex: termino, $options: 'i' } },
-        { serie: { $regex: termino, $options: 'i' } },
-        { host: { $regex: termino, $options: 'i' } },
-        { procesador: { $regex: termino, $options: 'i' } }
-      ]
-    }).limit(20);
-    res.json({
-      success: true,
-      count: equipos.length,
-      data: equipos
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error en la búsqueda',
       error: error.message
     });
   }
