@@ -19,6 +19,20 @@ const usuarioSchema = new mongoose.Schema({
     required: [true, 'El apellido es requerido'],
     trim: true
   },
+  usuario: {
+    type: String,
+    required: [true, 'El usuario es requerido'],
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  iniciales: {
+    type: String,
+    required: [true, 'Las iniciales son requeridas'],
+    trim: true,
+    uppercase: true,
+    maxlength: 4
+  },
   cargo: {
     type: String,
     required: [true, 'El cargo es requerido'],
@@ -41,31 +55,55 @@ const usuarioSchema = new mongoose.Schema({
   password: {
     type: String
   },
+  // ========== NUEVA SECCIÓN: TELÉFONO CON PREFIJO ==========
   telefono: {
-    type: String,
-    required: [true, 'El teléfono es requerido'],
-    trim: true
+    prefijo: {
+      type: String,
+      default: '+51',
+      trim: true
+    },
+    numero: {
+      type: String,
+      required: [true, 'El número de teléfono es requerido'],
+      trim: true
+    }
   },
-  usuario: {
-    type: String,
-    required: [true, 'El usuario es requerido'],
-    unique: true,
-    trim: true,
-    lowercase: true
-  },
-  iniciales: {
-    type: String,
-    required: [true, 'Las iniciales son requeridas'],
-    trim: true,
-    uppercase: true,
-    maxlength: 4
-  },
+
   estado: {
     type: String,
     enum: ['Activo', 'Inactivo', 'Baja'],
     default: 'Activo',
     index: true
   },
+
+  // ========== NUEVA SECCIÓN: CUENTAS DE SISTEMAS ==========
+  cuentas: {
+    // Bitrix24
+    bitrix24: {
+      type: Boolean,
+      default: false
+    },
+    // NAS (Network Attached Storage)
+    nas: {
+      type: Boolean,
+      default: false
+    },
+    // Cuentas de Microsoft
+    microsoft: {
+      type: [String],
+      enum: [
+        'Power BI',
+        'Outlook Exchange 1',
+        'Microsoft Business Basic',
+        'Microsoft Business Standard',
+        'Teams Premium',
+        'Power Apps',
+        'Power Automate'
+      ],
+      default: []
+    }
+  },
+
   observacion: {
     type: String,
     trim: true,
@@ -79,6 +117,11 @@ const usuarioSchema = new mongoose.Schema({
 
 usuarioSchema.virtual('nombreCompleto').get(function () {
   return `${this.nombre} ${this.apellido}`;
+});
+
+// Virtual para teléfono completo (prefijo + número)
+usuarioSchema.virtual('telefonoCompleto').get(function () {
+  return `${this.telefono.prefijo} ${this.telefono.numero}`;
 });
 
 usuarioSchema.virtual('equiposActuales', {

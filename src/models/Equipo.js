@@ -54,11 +54,6 @@ const equipoSchema = new mongoose.Schema({
       return this.fechaCompra;
     }
   },
-  antiguedad: {
-    type: Number,
-    default: 0
-  },
-
   procesador: {
     type: String,
     trim: true
@@ -147,6 +142,36 @@ const equipoSchema = new mongoose.Schema({
       type: String,
       trim: true,
       default: ''
+    }
+  },
+
+  // ========== NUEVA SECCIÓN: PROVEEDOR ==========
+  proveedor: {
+    razonSocial: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    ruc: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: ''
+    },
+    nroFactura: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    precioUnitario: {
+      type: Number,
+      min: [0, 'El precio debe ser mayor o igual a 0'],
+      default: 0
+    },
+    moneda: {
+      type: String,
+      enum: ['PEN', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'],
+      default: 'PEN'
     }
   },
 
