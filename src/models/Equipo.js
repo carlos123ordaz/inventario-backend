@@ -53,12 +53,6 @@ const equipoSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'La fecha de compra es requerida']
   },
-  primerUso: {
-    type: Date,
-    default: function () {
-      return this.fechaCompra;
-    }
-  },
   procesador: {
     type: String,
     trim: true
