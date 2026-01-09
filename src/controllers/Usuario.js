@@ -6,17 +6,17 @@ exports.obtenerUsuarios = async (req, res) => {
   try {
     const { estado, area, page = 1, limit = 10 } = req.query;
     let filtro = {};
-    
+
     if (estado) filtro.estado = estado;
     if (area) filtro.area = area;
-    
+
     const usuarios = await Usuario.find(filtro)
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
-    
+
     const total = await Usuario.countDocuments(filtro);
-    
+
     res.json({
       success: true,
       data: usuarios,
@@ -38,7 +38,7 @@ exports.obtenerUsuarios = async (req, res) => {
 exports.obtenerUsuarioPorId = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id);
-    
+
     if (!usuario) {
       return res.status(404).json({
         success: false,
@@ -46,7 +46,7 @@ exports.obtenerUsuarioPorId = async (req, res) => {
       });
     }
     const equiposActuales = await Historial.equiposDeUsuario(usuario._id, true);
-    
+
     res.json({
       success: true,
       data: {
@@ -72,9 +72,9 @@ exports.crearUsuario = async (req, res) => {
         errors: errors.array()
       });
     }
-    
+
     const usuario = await Usuario.create(req.body);
-    
+
     res.status(201).json({
       success: true,
       message: 'Usuario creado exitosamente',
@@ -88,7 +88,7 @@ exports.crearUsuario = async (req, res) => {
         message: `El ${campo} ya está registrado`
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al crear usuario',
@@ -108,20 +108,21 @@ exports.actualizarUsuario = async (req, res) => {
         runValidators: true
       }
     );
-    
+
     if (!usuario) {
       return res.status(404).json({
         success: false,
         message: 'Usuario no encontrado'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Usuario actualizado exitosamente',
       data: usuario
     });
   } catch (error) {
+    console.error(error);
     if (error.code === 11000) {
       const campo = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
@@ -129,7 +130,7 @@ exports.actualizarUsuario = async (req, res) => {
         message: `El ${campo} ya está registrado en otro usuario`
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al actualizar usuario',
@@ -142,28 +143,28 @@ exports.actualizarUsuario = async (req, res) => {
 exports.eliminarUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id);
-    
+
     if (!usuario) {
       return res.status(404).json({
         success: false,
         message: 'Usuario no encontrado'
       });
     }
-    
+
     const tieneEquipos = await Historial.findOne({
       usuario: req.params.id,
       activo: true
     });
-    
+
     if (tieneEquipos) {
       return res.status(400).json({
         success: false,
         message: 'No se puede eliminar el usuario porque tiene equipos asignados'
       });
     }
-    
+
     await usuario.deleteOne();
-    
+
     res.json({
       success: true,
       message: 'Usuario eliminado exitosamente'
@@ -180,14 +181,14 @@ exports.eliminarUsuario = async (req, res) => {
 exports.buscarUsuarios = async (req, res) => {
   try {
     const { termino } = req.query;
-    
+
     if (!termino) {
       return res.status(400).json({
         success: false,
         message: 'Debe proporcionar un término de búsqueda'
       });
     }
-    
+
     const usuarios = await Usuario.find({
       $or: [
         { nombre: { $regex: termino, $options: 'i' } },
@@ -198,7 +199,7 @@ exports.buscarUsuarios = async (req, res) => {
         { area: { $regex: termino, $options: 'i' } }
       ]
     }).limit(20);
-    
+
     res.json({
       success: true,
       count: usuarios.length,
@@ -218,7 +219,7 @@ exports.obtenerHistorialUsuario = async (req, res) => {
     const historial = await Historial.find({ usuario: req.params.id })
       .populate('equipo', 'marca modelo serie equipo')
       .sort({ fechaAsignacion: -1 });
-    
+
     res.json({
       success: true,
       count: historial.length,
