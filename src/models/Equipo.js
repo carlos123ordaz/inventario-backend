@@ -32,6 +32,11 @@ const equipoSchema = new mongoose.Schema({
     trim: true,
     uppercase: true
   },
+  hostname: {
+    type: String,
+    trim: true,
+    uppercase: true
+  },
 
   estado: {
     type: String,
