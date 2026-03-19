@@ -40,7 +40,7 @@ const equipoSchema = new mongoose.Schema({
 
   estado: {
     type: String,
-    enum: ['Disponible', 'En Uso', 'Mantenimiento', 'Dado de Baja', 'Extraviado'],
+    enum: ['Disponible', 'En Uso', 'Mantenimiento', 'Dado de Baja', 'Extraviado', 'Prestamo'],
     default: 'Disponible',
     index: true
   },
@@ -51,7 +51,6 @@ const equipoSchema = new mongoose.Schema({
   },
   fechaCompra: {
     type: Date,
-    required: [true, 'La fecha de compra es requerida']
   },
   procesador: {
     type: String,
@@ -96,7 +95,12 @@ const equipoSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-
+  puk: String,
+  email: String,
+  password: String,
+  codeSIM: String,
+  imei: String,
+  phoneNumber: String,
   clavesBIOS: {
     contrasena: {
       type: String,
@@ -144,7 +148,7 @@ const equipoSchema = new mongoose.Schema({
     }
   },
 
-  // ========== NUEVA SECCIÓN: PROVEEDOR ==========
+
   proveedor: {
     razonSocial: {
       type: String,

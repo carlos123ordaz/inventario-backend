@@ -4,6 +4,23 @@ const csv = require('csv-parser');
 const multer = require('multer');
 const { Readable } = require('stream');
 
+const iconv = require('iconv-lite');
+
+// Agregar esta función de utilidad
+function convertirEncoding(buffer) {
+    // Detectar si es UTF-8 válido
+    try {
+        const texto = buffer.toString('utf-8');
+        // Si tiene caracteres de reemplazo, probablemente no es UTF-8
+        if (texto.includes('�')) {
+            return iconv.decode(buffer, 'latin1');
+        }
+        return texto;
+    } catch {
+        return iconv.decode(buffer, 'latin1');
+    }
+}
+
 // ============================================================
 // CAMPOS MAPEABLES DEL MODELO EQUIPO
 // ============================================================
@@ -15,7 +32,7 @@ const CAMPOS_EQUIPO = [
     { key: 'host', label: 'Host', required: false, ejemplo: 'PC-CONTABILIDAD-01' },
     { key: 'hostname', label: 'Hostname', required: false, ejemplo: 'DESKTOP-A1B2C3' },
     { key: 'estado', label: 'Estado', required: false, ejemplo: 'Disponible, En Uso, Mantenimiento, Dado de Baja, Extraviado' },
-    { key: 'fechaCompra', label: 'Fecha de Compra', required: true, ejemplo: '2024-01-15' },
+    { key: 'fechaCompra', label: 'Fecha de Compra', ejemplo: '2024-01-15' },
     { key: 'procesador', label: 'Procesador', required: false, ejemplo: 'Intel Core i7-1165G7' },
     { key: 'almacenamiento', label: 'Almacenamiento', required: false, ejemplo: '512GB SSD' },
     { key: 'memoria', label: 'Memoria RAM', required: false, ejemplo: '16GB DDR4' },
@@ -31,7 +48,22 @@ const CAMPOS_EQUIPO = [
     { key: 'proveedor.nroFactura', label: 'Proveedor - Nro Factura', required: false, ejemplo: 'F001-00123' },
     { key: 'proveedor.precioUnitario', label: 'Proveedor - Precio Unitario', required: false, ejemplo: '3500.00' },
     { key: 'proveedor.moneda', label: 'Proveedor - Moneda', required: false, ejemplo: 'PEN, USD, EUR' },
+    { key: 'clavesBIOS.contrasena', label: 'BIOS - Contraseña', required: false, ejemplo: 'admin123' },
+    { key: 'clavesBIOS.notas', label: 'BIOS - Notas', required: false, ejemplo: 'Contraseña por defecto del fabricante' },
+    { key: 'clavesAdministrador.usuario', label: 'Admin - Usuario', required: false, ejemplo: 'Administrador' },
+    { key: 'clavesAdministrador.contrasena', label: 'Admin - Contraseña', required: false, ejemplo: 'P@ssw0rd' },
+    { key: 'clavesAdministrador.notas', label: 'Admin - Notas', required: false, ejemplo: 'Cuenta de administración local' },
+    { key: 'clavesEquipo.usuario', label: 'Equipo - Usuario', required: false, ejemplo: 'usuario.local' },
+    { key: 'clavesEquipo.contrasena', label: 'Equipo - Contraseña', required: false, ejemplo: '12345678' },
+    { key: 'clavesEquipo.notas', label: 'Equipo - Notas', required: false, ejemplo: 'Cuenta estándar del usuario' },
+
+    { key: 'puk', label: 'Celular - PUK', required: false, ejemplo: '12345678' },
+    { key: 'email', label: 'Celular - Correo electrónico', required: false, ejemplo: 'usuario@gmail.com' },
+    { key: 'password', label: 'Celular - Contraseña', required: false, ejemplo: '********' },
+    { key: 'codeSIM', label: 'Código SIM', required: false, ejemplo: '8951071234567890123' },
+    { key: 'imei', label: 'IMEI', required: false, ejemplo: '359876543210123' },
     { key: 'observaciones', label: 'Observaciones', required: false, ejemplo: 'Equipo nuevo' },
+    { key: 'phoneNumber', label: 'Línea Asignada', required: false, ejemplo: '985..' },
 ];
 
 // ============================================================
@@ -74,7 +106,8 @@ exports.previsualizarCSV = async (req, res) => {
         const delimitador = req.body.delimitador || ',';
 
         const resultados = [];
-        const readable = Readable.from(req.file.buffer);
+        const contenido = convertirEncoding(req.file.buffer);
+        const readable = Readable.from(Buffer.from(contenido, 'utf-8'));
 
         await new Promise((resolve, reject) => {
             readable
@@ -268,6 +301,16 @@ exports.exportarEquipos = async (req, res) => {
             { header: 'Puertos USB', key: 'puertosUSB', width: 12 },
             { header: 'Puerto HDMI', key: 'puertoHDMI', width: 12 },
             { header: 'Puerto USB-C', key: 'puertoC', width: 12 },
+
+            { header: 'BIOS - Contraseña', key: 'biosContrasena', width: 18 },
+            { header: 'BIOS - Notas', key: 'biosNotas', width: 20 },
+            { header: 'Admin - Usuario', key: 'adminUsuario', width: 18 },
+            { header: 'Admin - Contraseña', key: 'adminContrasena', width: 18 },
+            { header: 'Admin - Notas', key: 'adminNotas', width: 20 },
+            { header: 'Equipo - Usuario', key: 'equipoUsuario', width: 18 },
+            { header: 'Equipo - Contraseña', key: 'equipoContrasena', width: 18 },
+            { header: 'Equipo - Notas', key: 'equipoNotas', width: 20 },
+
             { header: 'Proveedor', key: 'proveedorRazonSocial', width: 25 },
             { header: 'RUC Proveedor', key: 'proveedorRuc', width: 15 },
             { header: 'Nro Factura', key: 'proveedorNroFactura', width: 16 },
@@ -276,6 +319,13 @@ exports.exportarEquipos = async (req, res) => {
             { header: 'Usuario Asignado', key: 'usuarioAsignado', width: 25 },
             { header: 'Área', key: 'areaUsuario', width: 18 },
             { header: 'Observaciones', key: 'observaciones', width: 30 },
+
+            { header: 'Celular - PUK', key: 'puk', width: 15 },
+            { header: 'Correo', key: 'email', width: 25 },
+            { header: 'Contraseña', key: 'password', width: 18 },
+            { header: 'Código SIM', key: 'codeSIM', width: 22 },
+            { header: 'IMEI', key: 'imei', width: 18 },
+            { header: 'Linea', key: 'phoneNumber', width: 18 },
         ];
 
         // Estilo header
@@ -318,6 +368,22 @@ exports.exportarEquipos = async (req, res) => {
                 usuarioAsignado: usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Sin asignar',
                 areaUsuario: usuario?.area || '',
                 observaciones: equipo.observaciones || '',
+
+                biosContrasena: equipo.clavesBIOS?.contrasena || '',
+                biosNotas: equipo.clavesBIOS?.notas || '',
+                adminUsuario: equipo.clavesAdministrador?.usuario || '',
+                adminContrasena: equipo.clavesAdministrador?.contrasena || '',
+                adminNotas: equipo.clavesAdministrador?.notas || '',
+                equipoUsuario: equipo.clavesEquipo?.usuario || '',
+                equipoContrasena: equipo.clavesEquipo?.contrasena || '',
+                equipoNotas: equipo.clavesEquipo?.notas || '',
+
+                puk: equipo.puk || '',
+                email: equipo.email || '',
+                password: equipo.password || '',
+                codeSIM: equipo.codeSIM || '',
+                imei: equipo.imei || '',
+                phoneNumber: equipo.phoneNumber || '',
             });
         });
 
@@ -341,7 +407,10 @@ exports.exportarEquipos = async (req, res) => {
             }
         });
 
-        ws.autoFilter = { from: 'A1', to: `X${equipos.length + 1}` };
+        ws.autoFilter = {
+            from: 'A1',
+            to: `${getColumnLetter(ws.columns.length)}${equipos.length + 1}`
+        };
 
         const fecha = new Date().toISOString().split('T')[0];
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -354,6 +423,16 @@ exports.exportarEquipos = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al exportar equipos', error: error.message });
     }
 };
+
+function getColumnLetter(index) {
+    let letter = '';
+    while (index > 0) {
+        const mod = (index - 1) % 26;
+        letter = String.fromCharCode(65 + mod) + letter;
+        index = Math.floor((index - 1) / 26);
+    }
+    return letter;
+}
 
 // ============================================================
 // UTILIDADES
@@ -371,5 +450,60 @@ function convertirValor(campo, valor) {
         const fecha = new Date(valor);
         return isNaN(fecha.getTime()) ? new Date() : fecha;
     }
+
+    if (campo === 'estado') {
+        return normalizarEstado(valor);
+    }
+
+    // Normalizar tipo
+    if (campo === 'tipo') {
+        return normalizarTipo(valor);
+    }
+
     return valor;
+}
+
+
+function convertirValor(campo, valor) {
+    const camposBooleanos = ['puertoRed', 'puertosUSB', 'puertoSerial', 'puertoHDMI', 'puertoC'];
+    if (camposBooleanos.includes(campo)) {
+        return ['true', 'si', 'sí', '1', 'yes'].includes(valor.toLowerCase());
+    }
+
+    if (campo === 'proveedor.precioUnitario') {
+        const num = parseFloat(valor);
+        return isNaN(num) ? 0 : num;
+    }
+
+    if (campo === 'fechaCompra') {
+        const fecha = new Date(valor);
+        return isNaN(fecha.getTime()) ? new Date() : fecha;
+    }
+
+    // Normalizar estado
+    if (campo === 'estado') {
+        return normalizarEstado(valor);
+    }
+
+
+    return valor;
+}
+
+function normalizarEstado(valor) {
+    const mapa = {
+        'DISPONIBLE': 'Disponible',
+        'STOCK': 'Disponible',
+        'NO TIENE': 'Disponible',
+        'ASIGNADO': 'En Uso',
+        'EN MANTENIMIENTO': 'Mantenimiento',
+        'REPARACION': 'Mantenimiento',
+        'INOPERATIVO': 'Dado de Baja',
+        'ROBADO': 'Extraviado',
+        'ROBADA': 'Extraviado',
+        'ROBADA': 'Extraviado',
+        'PRESTAMO': 'Prestamo',
+    };
+
+    const normalizado = valor.toLowerCase().trim();
+    return mapa[normalizado] || 'Disponible';
 }
