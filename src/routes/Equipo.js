@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const equipoController = require('../controllers/Equipo');
+const importExportController = require('../controllers/equipoImportExport');
 const { verificarToken } = require('../middlewares/authMiddleware');
 
 const validacionEquipo = [
@@ -13,11 +14,14 @@ const validacionEquipo = [
 
 router.use(verificarToken);
 
-// IMPORTANTE: Las rutas específicas deben ir ANTES que las rutas con parámetros
+// Rutas específicas PRIMERO
 router.get('/estadisticas', equipoController.obtenerEstadisticas);
+router.get('/campos-mapeo', importExportController.obtenerCamposMapeo);
+router.get('/exportar', importExportController.exportarEquipos);
+router.post('/previsualizar-csv', importExportController.uploadMiddleware, importExportController.previsualizarCSV);
+router.post('/importar', importExportController.uploadMiddleware, importExportController.importarEquipos);
 
-
-// Rutas con parámetros van al final
+// Rutas con parámetros al final
 router.get('/', equipoController.obtenerEquipos);
 router.get('/:id', equipoController.obtenerEquipoPorId);
 router.post('/', validacionEquipo, equipoController.crearEquipo);

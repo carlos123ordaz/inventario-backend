@@ -55,7 +55,6 @@ const usuarioSchema = new mongoose.Schema({
   password: {
     type: String
   },
-  // ========== NUEVA SECCIÓN: TELÉFONO CON PREFIJO ==========
   telefono: {
     prefijo: {
       type: String,
@@ -64,7 +63,6 @@ const usuarioSchema = new mongoose.Schema({
     },
     numero: {
       type: String,
-      required: [true, 'El número de teléfono es requerido'],
       trim: true
     }
   },
@@ -75,20 +73,15 @@ const usuarioSchema = new mongoose.Schema({
     default: 'Activo',
     index: true
   },
-
-  // ========== NUEVA SECCIÓN: CUENTAS DE SISTEMAS ==========
   cuentas: {
-    // Bitrix24
     bitrix24: {
       type: Boolean,
       default: false
     },
-    // NAS (Network Attached Storage)
     nas: {
       type: Boolean,
       default: false
     },
-    // Cuentas de Microsoft
     microsoft: {
       type: [String],
       enum: [

@@ -1,6 +1,8 @@
 const Usuario = require('../models/Usuario');
 const Historial = require('../models/Historial');
 const { validationResult } = require('express-validator');
+const axios = require('axios'); // npm install axios
+const bcrypt = require('bcrypt');
 
 exports.obtenerUsuarios = async (req, res) => {
   try {
@@ -13,7 +15,7 @@ exports.obtenerUsuarios = async (req, res) => {
     const usuarios = await Usuario.find(filtro)
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+      .sort({ _id: -1 });
 
     const total = await Usuario.countDocuments(filtro);
 
@@ -229,6 +231,123 @@ exports.obtenerHistorialUsuario = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al obtener historial',
+      error: error.message
+    });
+  }
+};
+
+
+const BITRIX_URL = 'https://corsusaint.bitrix24.com/rest/4296/gzwh0355xyw5ihbc/user.get';
+
+function soloNumeros(valor) {
+  if (!valor) return null;
+  const nums = valor.replace(/\D/g, '');
+  return nums || null;
+}
+
+exports.sincronizarBitrix = async (req, res) => {
+  try {
+    // 1. Obtener todos los usuarios de Bitrix24 (paginado)
+    let allUsersRaw = [];
+    let start = 0;
+
+    while (true) {
+      const response = await axios.get(BITRIX_URL, { params: { start } });
+      const data = response.data;
+      allUsersRaw.push(...data.result);
+
+      if (data.next) {
+        start = data.next;
+      } else {
+        break;
+      }
+    }
+
+    // 2. Mapear usuarios de Bitrix al esquema de MongoDB
+    const bitrixUsers = [];
+    for (const user of allUsersRaw) {
+      const dni = soloNumeros(user.UF_USR_1583783785065);
+      if (!dni) continue; // Saltar usuarios sin DNI
+
+      const hashedPassword = await bcrypt.hash(dni, 10);
+
+      bitrixUsers.push({
+        nombre: user.NAME || '',
+        apellido: user.LAST_NAME || '',
+        correo: (user.EMAIL || '').toLowerCase().trim(),
+        cargo: user.WORK_POSITION || 'Sin cargo',
+        telefono: {
+          prefijo: '+51',
+          numero: soloNumeros(user.PERSONAL_PHONE) || ''
+        },
+        dni,
+        estado: user.ACTIVE ? 'Activo' : 'Baja',
+        usuario: (user.UF_SKYPE || user.EMAIL || '').toLowerCase().trim(),
+        iniciales: `${(user.NAME || '').charAt(0)}${(user.LAST_NAME || '').charAt(0)}`.toUpperCase(),
+        area: user.UF_DEPARTMENT?.[0] ? `Dept ${user.UF_DEPARTMENT[0]}` : 'Sin área',
+        password: hashedPassword,
+      });
+    }
+
+    // 3. Obtener usuarios existentes de la DB
+    const existentes = await Usuario.find({}, { dni: 1, correo: 1, estado: 1 });
+    const dniSet = new Set(existentes.map(u => u.dni));
+    const correoSet = new Set(existentes.map(u => u.correo));
+
+    // 4. Separar nuevos vs existentes para actualizar estado
+    const nuevos = [];
+    let actualizados = 0;
+
+    for (const user of bitrixUsers) {
+      if (!dniSet.has(user.dni) && !correoSet.has(user.correo)) {
+        // Usuario nuevo → insertar
+        nuevos.push(user);
+      } else {
+        // Usuario existente → actualizar estado si cambió
+        const resultado = await Usuario.findOneAndUpdate(
+          {
+            $or: [{ dni: user.dni }, { correo: user.correo }],
+            estado: { $ne: user.estado } // Solo si el estado es diferente
+          },
+          {
+            $set: {
+              estado: user.estado,
+              cargo: user.cargo,
+              nombre: user.nombre,
+              apellido: user.apellido,
+            }
+          }
+        );
+        if (resultado) actualizados++;
+      }
+    }
+
+    // 5. Insertar nuevos usuarios
+    let insertados = 0;
+    if (nuevos.length > 0) {
+      const result = await Usuario.insertMany(nuevos, { ordered: false }).catch(err => {
+        // Manejar duplicados parciales
+        if (err.insertedDocs) return { insertedCount: err.insertedDocs.length };
+        throw err;
+      });
+      insertados = result.insertedCount || nuevos.length;
+    }
+
+    res.json({
+      success: true,
+      message: 'Sincronización completada',
+      data: {
+        totalBitrix: allUsersRaw.length,
+        nuevosInsertados: insertados,
+        estadosActualizados: actualizados,
+        sinCambios: bitrixUsers.length - insertados - actualizados
+      }
+    });
+  } catch (error) {
+    console.error('Error en sincronización Bitrix:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al sincronizar con Bitrix24',
       error: error.message
     });
   }

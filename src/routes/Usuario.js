@@ -26,4 +26,6 @@ router.post('/', validacionUsuario, usuarioController.crearUsuario);
 router.put('/:id', usuarioController.actualizarUsuario);
 router.delete('/:id', usuarioController.eliminarUsuario);
 
+// routes/usuarios.js - agregar esta línea junto a las otras rutas POST
+router.post('/sync-bitrix', usuarioController.sincronizarBitrix);
 module.exports = router;
