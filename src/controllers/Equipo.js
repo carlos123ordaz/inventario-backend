@@ -3,16 +3,6 @@ const { validationResult } = require('express-validator');
 const Equipo = require('../models/Equipo');
 const Usuario = require('../models/Usuario');
 
-/**
- * Obtiene equipos con búsqueda, filtros y paginación unificados
- * Query params soportados:
- * - termino: búsqueda por marca, modelo, serie, host, procesador
- * - estado: filtro por estado
- * - tipo: filtro por tipo de equipo
- * - marca: filtro por marca
- * - page: número de página (default: 1)
- * - limit: límite por página (default: 10)
- */
 exports.obtenerEquipos = async (req, res) => {
   try {
     const { termino, estado, tipo, marca, page = 1, limit = 10 } = req.query;

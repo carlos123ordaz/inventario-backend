@@ -95,12 +95,6 @@ const equipoSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  puk: String,
-  email: String,
-  password: String,
-  codeSIM: String,
-  imei: String,
-  phoneNumber: String,
   clavesBIOS: {
     contrasena: {
       type: String,
@@ -145,7 +139,11 @@ const equipoSchema = new mongoose.Schema({
       type: String,
       trim: true,
       default: ''
-    }
+    },
+
+
+
+
   },
 
 
@@ -182,7 +180,17 @@ const equipoSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ''
-  }
+  },
+
+  //Nuevos Campos de Celular
+
+  puk: String,
+  email: String,
+  password: String,
+  codeSIM: String,
+  imei: String,
+  phoneNumber: String,
+
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
